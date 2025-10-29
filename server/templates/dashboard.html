@@ -1,0 +1,102 @@
+<!-- templates/dashboard.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Dashboard Deteksi Banjir</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; color: #222; }
+    .card { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); margin-bottom: 16px;}
+    #chartContainer { width: 100%; max-width: 900px; }
+  </style>
+</head>
+<body>
+  <h2>Dashboard Deteksi Banjir</h2>
+  <div class="card">
+    <strong>Ringkasan</strong>
+    <div id="summary">Memuat...</div>
+  </div>
+
+  <div class="card" id="chartCard">
+    <canvas id="waterChart"></canvas>
+  </div>
+
+  <div class="card">
+    <strong>Log Terakhir</strong>
+    <table id="logTable" border="1" cellpadding="6" style="border-collapse:collapse;">
+      <thead><tr><th>ID</th><th>Device</th><th>Waktu (UTC)</th><th>Level %</th><th>Ultrasonic cm</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const apiUrlLogs = "/api/logs?limit=5000";
+    let chart = null;
+
+    async function fetchData() {
+      const r = await fetch(apiUrlLogs);
+      const data = await r.json();
+      return data;
+    }
+
+    function buildChart(labels, values) {
+      const ctx = document.getElementById('waterChart').getContext('2d');
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Tingkat Ketinggian Air (%)',
+            data: values,
+            fill: true,
+            tension: 0.2,
+            pointRadius: 2
+          }]
+        },
+        options: {
+          scales: {
+            x: { title: {display:true, text: 'Waktu (UTC)'} },
+            y: { title: {display:true, text: 'Tingkat Ketinggian Air (%)'}, min: 0, max: 100 }
+          }
+        }
+      });
+    }
+
+    function renderTable(rows) {
+      const tbody = document.querySelector('#logTable tbody');
+      tbody.innerHTML = '';
+      const lastRows = rows.slice(-20).reverse();
+      lastRows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.id}</td><td>${r.device_id}</td><td>${r.ts_iso}</td><td>${r.level_percent}</td><td>${r.ultrasonic_cm}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function refreshAll() {
+      const rows = await fetchData();
+      // labels = timestamp ISO
+      const labels = rows.map(r => r.ts_iso);
+      const values = rows.map(r => r.level_percent);
+      buildChart(labels, values);
+      renderTable(rows);
+
+      // ringkasan
+      if (values.length) {
+        const mean = (values.reduce((a,b)=>a+b,0)/values.length).toFixed(2);
+        const max = Math.max(...values);
+        const min = Math.min(...values);
+        document.getElementById('summary').innerText = `Count=${values.length}, mean=${mean}%, max=${max}%, min=${min}%`;
+      } else {
+        document.getElementById('summary').innerText = 'Belum ada data';
+      }
+    }
+
+    // refresh berkala
+    refreshAll();
+    setInterval(refreshAll, 10000); // tiap 10 detik
+  </script>
+</body>
+</html>
