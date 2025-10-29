@@ -110,15 +110,3 @@ Ketinggian air dalam persentase dihitung dengan mempertimbangkan jarak kalibrasi
 $$\text{Level}(\%) = \left( 1 - \frac{D_{ukur} - D_{min}}{D_{max} - D_{min}} \right) \times 100$$
 
 Ini memastikan bahwa semakin kecil $D_{ukur}$ (sensor semakin dekat ke air), semakin tinggi persentase Level (mendekati 100%).
-
----
-
-## 👥 Kontribusi
-
-Silakan ajukan *issues* atau *pull requests* jika Anda memiliki saran atau perbaikan.
-
----
-
-## 📄 Lisensi
-
-Proyek ini berada di bawah lisensi **[Nama Lisensi Anda, misal: MIT License]**. Lihat file [LICENSE](LICENSE) untuk detail lebih lanjut.
